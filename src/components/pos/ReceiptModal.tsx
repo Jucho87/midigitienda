@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Order, Tenant } from '../../types';
 import { Printer, CheckCircle, X, Download } from 'lucide-react';

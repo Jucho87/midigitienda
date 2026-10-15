@@ -40,6 +40,9 @@ const STORAGE_KEYS = {
 };
 
 function loadStorage<T>(key: string, defaultData: T): T {
+  if (typeof window === 'undefined') {
+    return defaultData;
+  }
   try {
     const raw = localStorage.getItem(key);
     if (!raw) {
@@ -53,6 +56,7 @@ function loadStorage<T>(key: string, defaultData: T): T {
 }
 
 function saveStorage<T>(key: string, data: T): void {
+  if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
@@ -713,15 +717,17 @@ class DatabaseService {
 
   // Reset demo data
   resetAllData(): void {
-    localStorage.removeItem(STORAGE_KEYS.TENANTS);
-    localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTIONS);
-    localStorage.removeItem(STORAGE_KEYS.ROLES);
-    localStorage.removeItem(STORAGE_KEYS.ROLE_PERMISSIONS);
-    localStorage.removeItem(STORAGE_KEYS.USERS);
-    localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
-    localStorage.removeItem(STORAGE_KEYS.ORDERS);
-    localStorage.removeItem(STORAGE_KEYS.TICKETS);
-    localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEYS.TENANTS);
+      localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTIONS);
+      localStorage.removeItem(STORAGE_KEYS.ROLES);
+      localStorage.removeItem(STORAGE_KEYS.ROLE_PERMISSIONS);
+      localStorage.removeItem(STORAGE_KEYS.USERS);
+      localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
+      localStorage.removeItem(STORAGE_KEYS.ORDERS);
+      localStorage.removeItem(STORAGE_KEYS.TICKETS);
+      localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+    }
     this.tenants = INITIAL_TENANTS;
     this.subscriptions = INITIAL_SUBSCRIPTIONS;
     this.roles = INITIAL_ROLES;

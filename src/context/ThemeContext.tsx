@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 
 interface ThemeContextType {
@@ -30,6 +32,7 @@ export const ThemeProvider: React.FC<{
   const [secondaryColor, setSecondaryColor] = useState<string>(initialSecondary);
 
   const applyColors = (pColor: string, sColor: string) => {
+    if (typeof window === 'undefined') return;
     try {
       const root = document.documentElement;
       root.style.setProperty('--primary-color', pColor);

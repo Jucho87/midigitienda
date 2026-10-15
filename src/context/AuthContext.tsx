@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { Tenant, User, TenantSubscription, Role } from '../types';
 import { db } from '../services/db';

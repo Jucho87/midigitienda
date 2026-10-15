@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/db';
