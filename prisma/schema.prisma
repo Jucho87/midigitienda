@@ -1,0 +1,264 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/midigitienda/nextjs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String   @db.VarChar(150)
+  slug           String   @unique @db.VarChar(100)
+  status         String   @default("active") @db.VarChar(20)
+  primaryColor   String   @default("#10B981") @map("primary_color") @db.VarChar(7)
+  secondaryColor String   @default("#0284C7") @map("secondary_color") @db.VarChar(7)
+  currency       String   @default("PEN") @db.VarChar(10)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  roles          Role[]
+  users          User[]
+  products       Product[]
+  orders         Order[]
+  subscription   TenantSubscription?
+  supportTickets SupportTicket[]
+  notifications  Notification[]
+  currencies     Currency[]
+
+  @@map("tenants")
+}
+
+model Permission {
+  id              String           @id @default(uuid()) @db.Uuid
+  module          String           @db.VarChar(50)
+  action          String           @db.VarChar(50)
+  slug            String           @unique @db.VarChar(100)
+  label           String           @default("") @db.VarChar(150)
+  description     String           @default("") @db.VarChar(255)
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @map("tenant_id") @db.Uuid
+  name            String           @db.VarChar(50)
+  description     String?          @db.VarChar(255)
+  isSystem        Boolean          @default(false) @map("is_system")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid()) @db.Uuid
+  roleId       String     @map("role_id") @db.Uuid
+  permissionId String     @map("permission_id") @db.Uuid
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id             String          @id @default(uuid()) @db.Uuid
+  tenantId       String          @map("tenant_id") @db.Uuid
+  roleId         String?         @map("role_id") @db.Uuid
+  name           String          @db.VarChar(100)
+  email          String          @unique @db.VarChar(150)
+  passwordHash   String          @map("password_hash") @db.VarChar(255)
+  isActive       Boolean         @default(true) @map("is_active")
+  isPlatformAdmin Boolean        @default(false) @map("is_platform_admin")
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role           Role?           @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  orders         Order[]
+  supportTickets SupportTicket[]
+  ticketMessages TicketMessage[]
+  notifications  Notification[]
+
+  @@index([tenantId])
+  @@index([roleId])
+  @@map("users")
+}
+
+model Product {
+  id          String      @id @default(uuid()) @db.Uuid
+  tenantId    String      @map("tenant_id") @db.Uuid
+  name        String      @db.VarChar(150)
+  barcode     String?     @db.VarChar(100)
+  price       Decimal     @db.Decimal(12, 2)
+  cost        Decimal     @default(0.00) @db.Decimal(12, 2)
+  stock       Decimal     @default(0.00) @db.Decimal(12, 2)
+  minStock    Decimal     @default(5.00) @map("min_stock") @db.Decimal(12, 2)
+  category    String?     @db.VarChar(100)
+  isActive    Boolean     @default(true) @map("is_active")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+
+  @@index([tenantId, barcode])
+  @@index([tenantId])
+  @@map("products")
+}
+
+model Order {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  userId          String      @map("user_id") @db.Uuid
+  subtotal        Decimal     @default(0.00) @db.Decimal(12, 2)
+  tax             Decimal     @default(0.00) @db.Decimal(12, 2)
+  total           Decimal     @db.Decimal(12, 2)
+  currencyCode    String      @default("PEN") @map("currency_code") @db.VarChar(10)
+  exchangeRate    Decimal     @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+  currencyTotal   Decimal     @default(0.00) @map("currency_total") @db.Decimal(14, 2)
+  paymentMethod   String      @map("payment_method") @db.VarChar(30)
+  paymentReference String?    @map("payment_reference") @db.VarChar(150)
+  amountReceived  Decimal     @default(0.00) @map("amount_received") @db.Decimal(14, 2)
+  changeGiven     Decimal     @default(0.00) @map("change_given") @db.Decimal(14, 2)
+  status          String      @default("completed") @db.VarChar(20)
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User        @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[]
+
+  @@index([tenantId, createdAt])
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  orderId      String   @map("order_id") @db.Uuid
+  productId    String   @map("product_id") @db.Uuid
+  productName  String   @map("product_name") @db.VarChar(150)
+  productBarcode String? @map("product_barcode") @db.VarChar(100)
+  quantity     Decimal  @db.Decimal(12, 2)
+  unitPrice    Decimal  @map("unit_price") @db.Decimal(12, 2)
+  cost         Decimal  @default(0.00) @db.Decimal(12, 2)
+
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model TenantSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @unique @map("tenant_id") @db.Uuid
+  planName  String   @map("plan_name") @db.VarChar(100)
+  price     Decimal  @db.Decimal(12, 2)
+  expiresAt DateTime @map("expires_at")
+  status    String   @default("active") @db.VarChar(20)
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_subscriptions")
+}
+
+// Planes comerciales configurables a nivel de plataforma (gestionados por el super administrador).
+model Plan {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(100)
+  description  String?  @db.VarChar(400)
+  price        Decimal  @db.Decimal(12, 2)
+  currency     String   @default("USD") @db.VarChar(10)
+  durationDays Int      @default(30) @map("duration_days")
+  isPopular    Boolean  @default(false) @map("is_popular")
+  isActive     Boolean  @default(true) @map("is_active")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("plans")
+}
+
+model SupportTicket {
+  id          String          @id @default(uuid()) @db.Uuid
+  tenantId    String          @map("tenant_id") @db.Uuid
+  userId      String          @map("user_id") @db.Uuid
+  subject     String          @db.VarChar(200)
+  description String          @db.Text
+  category    String          @db.VarChar(50)
+  priority    String          @default("medium") @db.VarChar(20)
+  status      String          @default("open") @db.VarChar(20)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User            @relation(fields: [userId], references: [id])
+  messages    TicketMessage[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@map("support_tickets")
+}
+
+model TicketMessage {
+  id             String        @id @default(uuid()) @db.Uuid
+  ticketId       String        @map("ticket_id") @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  message        String        @db.Text
+  isSupportAgent Boolean       @default(false) @map("is_support_agent")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
+  @@index([userId])
+  @@map("ticket_messages")
+}
+
+model Notification {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  userId          String?  @map("user_id") @db.Uuid
+  title           String   @db.VarChar(150)
+  message         String   @db.Text
+  type            String   @db.VarChar(50)
+  isRead          Boolean  @default(false) @map("is_read")
+  relatedEntityId String?  @map("related_entity_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@map("notifications")
+}
+
+model Currency {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  code      String   @db.VarChar(10)
+  symbol    String   @db.VarChar(8)
+  name      String   @db.VarChar(80)
+  rateToBase Decimal @default(1) @map("rate_to_base") @db.Decimal(18, 6)
+  isBase    Boolean  @default(false) @map("is_base")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("currencies")
+}
