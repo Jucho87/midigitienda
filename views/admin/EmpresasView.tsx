@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { Building2, Plus, Check, Loader2, Users, X, ArrowRight, Package, ReceiptText, Wallet } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/services/db';
@@ -28,9 +27,12 @@ interface PlatformTotals {
   orders: number;
 }
 
-export const EmpresasView: React.FC = () => {
+interface EmpresasViewProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const EmpresasView: React.FC<EmpresasViewProps> = ({ onNavigate }) => {
   const { isPlatformAdmin, activeTenantId, setActiveTenant } = useAuth();
-  const router = useRouter();
 
   const [tenants, setTenants] = useState<AdminTenant[]>([]);
   const [totals, setTotals] = useState<PlatformTotals | null>(null);
@@ -54,52 +56,109 @@ export const EmpresasView: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isPlatformAdmin) load();
-  }, [isPlatformAdmin, load]);
+    load();
+  }, [load]);
 
   const handleManage = async (id: string) => {
     try {
       setSwitching(id);
       await setActiveTenant(id);
-      router.push('/');
+      if (onNavigate) {
+        onNavigate('pos');
+      }
+      setSwitching(null);
     } catch (e: any) {
       setError(e?.message || 'No se pudo cambiar de empresa');
       setSwitching(null);
     }
   };
 
-  if (!isPlatformAdmin) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center max-w-sm">
-          <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-7 h-7 text-rose-500" />
-          </div>
-          <h2 className="text-lg font-bold text-slate-800">Acceso restringido</h2>
-          <p className="text-sm text-slate-500 mt-1">Esta sección es exclusiva del administrador de la plataforma.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleResetToGlobal = async () => {
+    try {
+      setSwitching('global');
+      await setActiveTenant('');
+      await load();
+      setSwitching(null);
+    } catch (e: any) {
+      setError(e?.message || 'No se pudo restablecer la vista global');
+      setSwitching(null);
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <Building2 className="w-5 h-5" /> Empresas de la plataforma
+            <Building2 className="w-5 h-5 text-emerald-600" /> Empresas de la plataforma
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Como administrador transversal, gestiona cualquier empresa y crea nuevas.
+            Super Administrador Global: gestiona cualquier empresa o supervisa todo el sistema de forma transversal.
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition"
-        >
-          <Plus className="w-4 h-4" /> Crear empresa
-        </button>
+        <div className="flex items-center space-x-2">
+          {activeTenantId && (
+            <button
+              onClick={handleResetToGlobal}
+              disabled={switching !== null}
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-xs"
+            >
+              🌐 Ver Todas las Empresas
+            </button>
+          )}
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition shadow-xs"
+          >
+            <Plus className="w-4 h-4" /> Crear empresa
+          </button>
+        </div>
       </div>
+
+      {/* Global / Scoped Mode Banner */}
+      {activeTenantId ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-amber-900">
+                Empresa seleccionada para operar:{' '}
+                <span className="underline">{tenants.find((t) => t.id === activeTenantId)?.name || activeTenantId}</span>
+              </p>
+              <p className="text-[11px] text-amber-700 mt-0.5">
+                Las vistas de POS, Inventario y Ventas están operando sobre este negocio específico.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleResetToGlobal}
+            className="px-3.5 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 text-xs font-bold hover:bg-amber-100 transition shadow-xs"
+          >
+            🌐 Volver a Vista Global
+          </button>
+        </div>
+      ) : (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 flex items-center justify-between shadow-xs">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white">
+                Modo Super Administrador Global — Sin atadura a ninguna empresa
+              </p>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Puedes ver todos los datos consolidados de todas las empresas o cambiar a cualquiera para gestionarla.
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+            Vista Consolidada Total
+          </span>
+        </div>
+      )}
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl px-4 py-3">{error}</div>

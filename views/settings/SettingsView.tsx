@@ -25,6 +25,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { symbolForCode } from '@/lib/currency-catalog';
+import { DianConfigPanel } from '@/components/settings/DianConfigPanel';
 
 export const SettingsView: React.FC = () => {
   const {
@@ -287,6 +288,9 @@ export const SettingsView: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* FACTURACIÓN ELECTRÓNICA & POS DIAN (SOFTWARE PROPIO) */}
+      <DianConfigPanel />
 
       {/* SAAS SUBSCRIPTION MANAGEMENT */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">

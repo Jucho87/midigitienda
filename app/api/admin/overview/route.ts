@@ -36,9 +36,11 @@ export async function GET() {
     }),
   ]);
 
-  const orderMap = new Map(ordersByTenant.map((o) => [o.tenantId, { sales: num(o._sum.total), count: o._count._all }]));
-  const productMap = new Map(productsByTenant.map((p) => [p.tenantId, p._count._all]));
-  const userMap = new Map(usersByTenant.map((u) => [u.tenantId, u._count._all]));
+  const orderMap = new Map<string, { sales: number; count: number }>(
+    ordersByTenant.map((o: any) => [o.tenantId, { sales: num(o._sum?.total), count: o._count?._all ?? 0 }])
+  );
+  const productMap = new Map<string, number>(productsByTenant.map((p: any) => [p.tenantId, p._count?._all ?? 0]));
+  const userMap = new Map<string, number>(usersByTenant.map((u: any) => [u.tenantId, u._count?._all ?? 0]));
 
   const companies = tenants.map((t) => {
     const ord = orderMap.get(t.id) || { sales: 0, count: 0 };

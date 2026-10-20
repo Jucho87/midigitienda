@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   XCircle,
   Calendar,
+  FileCode2,
 } from 'lucide-react';
 
 export const OrdersView: React.FC = () => {
@@ -84,6 +85,17 @@ export const OrdersView: React.FC = () => {
         alert(err instanceof Error ? err.message : 'Error al anular la venta');
       }
     }
+  };
+
+  const downloadXml = (order: Order) => {
+    if (!order.dianXml) return;
+    const blob = new Blob([order.dianXml], { type: 'application/xml;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${order.dianDocumentNumber || order.id}.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const paymentIcon = (method: string) => {
@@ -212,8 +224,16 @@ export const OrdersView: React.FC = () => {
                       }`}
                     >
                       <td className="py-3.5 px-4">
-                        <div className="font-mono font-bold text-slate-900 text-xs">
-                          #{order.id.slice(-6).toUpperCase()}
+                        <div className="font-mono font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+                          <span>{order.dianDocumentNumber || `#${order.id.slice(-6).toUpperCase()}`}</span>
+                          {order.dianDocumentNumber && (
+                            <span
+                              className="text-[9px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded font-sans"
+                              title="Comprobante con CUFE generado bajo modalidad Software Propio"
+                            >
+                              DIAN
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-slate-400 flex items-center space-x-1 mt-0.5">
                           <Calendar className="w-3 h-3 text-slate-300" />
@@ -292,11 +312,22 @@ export const OrdersView: React.FC = () => {
                             <Eye className="w-4 h-4" />
                           </button>
 
+                          {/* XML DIAN download */}
+                          {order.dianXml && (
+                            <button
+                              onClick={() => downloadXml(order)}
+                              className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg"
+                              title="Descargar archivo XML UBL 2.1 oficial de la DIAN"
+                            >
+                              <FileCode2 className="w-4 h-4" />
+                            </button>
+                          )}
+
                           {/* Print ticket */}
                           <button
                             onClick={() => setReceiptOrder(order)}
                             className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
-                            title="Reimprimir Ticket POS"
+                            title="Reimprimir Ticket POS con QR DIAN"
                           >
                             <Printer className="w-4 h-4" />
                           </button>

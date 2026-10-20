@@ -14,28 +14,74 @@ import {
 } from '@/types';
 
 export const SYSTEM_PERMISSIONS: Permission[] = [
-  // Products
-  { id: 'perm-p-create', module: 'products', action: 'create', slug: 'products.create', label: 'Crear Productos', description: 'Permite registrar nuevos artículos en el catálogo' },
-  { id: 'perm-p-read', module: 'products', action: 'read', slug: 'products.read', label: 'Ver Productos', description: 'Permite consultar el catálogo e inventario' },
-  { id: 'perm-p-update', module: 'products', action: 'update', slug: 'products.update', label: 'Editar Productos', description: 'Permite modificar precios, costos y datos' },
-  { id: 'perm-p-delete', module: 'products', action: 'delete', slug: 'products.delete', label: 'Eliminar Productos', description: 'Permite dar de baja productos del sistema' },
-  
-  // Orders / POS
-  { id: 'perm-o-create', module: 'orders', action: 'create', slug: 'orders.create', label: 'Cobrar en POS', description: 'Permite procesar ventas y emitir tickets' },
-  { id: 'perm-o-read', module: 'orders', action: 'read', slug: 'orders.read', label: 'Historial de Ventas', description: 'Permite consultar ventas realizadas' },
-  { id: 'perm-o-delete', module: 'orders', action: 'delete', slug: 'orders.delete', label: 'Anular Ventas', description: 'Permite cancelar transacciones y revertir stock' },
-  
-  // Reports
-  { id: 'perm-r-read', module: 'reports', action: 'read', slug: 'reports.read', label: 'Reportes y Métricas', description: 'Acceso a ingresos, ganancias y balances' },
-  
-  // Users / Roles
-  { id: 'perm-u-manage', module: 'users', action: 'manage', slug: 'users.manage', label: 'Gestionar Personal', description: 'Crear usuarios, asignar roles y configurar permisos' },
-  
-  // Support
-  { id: 'perm-s-manage', module: 'support', action: 'manage', slug: 'support.manage', label: 'Mesa de Ayuda', description: 'Crear y dar seguimiento a tickets de soporte' },
+  // --- 1. PUNTO DE VENTA (POS) & CAJA ---
+  { id: 'perm-pos-view', module: 'orders', action: 'view', slug: 'orders.view', label: 'Ver Terminal POS', description: 'Permite abrir el Punto de Venta y buscar artículos en caja' },
+  { id: 'perm-pos-create', module: 'orders', action: 'create', slug: 'orders.create', label: 'Cobrar y Emitir Ventas', description: 'Permite registrar ventas, procesar pagos y emitir comprobantes' },
+  { id: 'perm-pos-read', module: 'orders', action: 'read', slug: 'orders.read', label: 'Historial de Ventas', description: 'Permite consultar el listado y detalle de ventas realizadas' },
+  { id: 'perm-pos-discount', module: 'orders', action: 'discount', slug: 'orders.discount', label: 'Aplicar Descuentos en Caja', description: 'Permite autorizar rebajas y promociones especiales al cobrar' },
+  { id: 'perm-pos-delete', module: 'orders', action: 'delete', slug: 'orders.delete', label: 'Anular Ventas / Comprobantes', description: 'Permite anular ventas finalizadas, devolver stock y emitir Nota Crédito' },
+  { id: 'perm-pos-reprint', module: 'orders', action: 'reprint', slug: 'orders.reprint', label: 'Reimprimir Comprobantes', description: 'Permite reimprimir tickets y tirillas de ventas anteriores' },
+  { id: 'perm-pos-cash', module: 'orders', action: 'cash_control', slug: 'orders.cash_control', label: 'Arqueo y Cierre de Caja', description: 'Control de apertura, caja inicial, retiros y cuadre diario de caja' },
+  { id: 'perm-pos-export', module: 'orders', action: 'export', slug: 'orders.export', label: 'Exportar Registro de Ventas', description: 'Permite exportar transacciones a hojas de cálculo (Excel / CSV)' },
 
-  // Settings
-  { id: 'perm-cfg-manage', module: 'settings', action: 'manage', slug: 'settings.manage', label: 'Configuración y Branding', description: 'Modificar colores, nombre de negocio y suscripción' },
+  // --- 2. CATÁLOGO & INVENTARIO ---
+  { id: 'perm-prod-read', module: 'products', action: 'read', slug: 'products.read', label: 'Consultar Inventario y Precios', description: 'Permite ver el catálogo, artículos, existencias y precios' },
+  { id: 'perm-prod-create', module: 'products', action: 'create', slug: 'products.create', label: 'Crear Productos', description: 'Permite registrar nuevos artículos, códigos de barras y categorías' },
+  { id: 'perm-prod-update', module: 'products', action: 'update', slug: 'products.update', label: 'Editar Productos y Precios', description: 'Permite modificar nombres, precios de venta, stock mínimo y datos' },
+  { id: 'perm-prod-delete', module: 'products', action: 'delete', slug: 'products.delete', label: 'Eliminar Productos', description: 'Permite dar de baja o eliminar artículos del catálogo' },
+  { id: 'perm-prod-stock', module: 'products', action: 'stock_adjust', slug: 'products.stock_adjust', label: 'Ajuste Manual de Existencias', description: 'Permite registrar entradas, salidas y mermas directas en almacén' },
+  { id: 'perm-prod-costs', module: 'products', action: 'cost_view', slug: 'products.cost_view', label: 'Ver Costos y Márgenes', description: 'Permite visualizar costos de adquisición y márgenes de utilidad unitaria' },
+  { id: 'perm-prod-categories', module: 'products', action: 'categories', slug: 'products.categories', label: 'Gestionar Categorías', description: 'Permite crear, ordenar y clasificar líneas de producto' },
+  { id: 'perm-prod-export', module: 'products', action: 'export', slug: 'products.export', label: 'Exportar e Importar Catálogo', description: 'Descarga y carga masiva de productos e inventario' },
+
+  // --- 3. FACTURACIÓN ELECTRÓNICA DIAN (COLOMBIA) ---
+  { id: 'perm-dian-view', module: 'dian', action: 'view', slug: 'dian.view', label: 'Ver Comprobantes DIAN', description: 'Permite consultar el estado de validación y CUFEs de documentos' },
+  { id: 'perm-dian-pos', module: 'dian', action: 'pos_equivalent', slug: 'dian.pos_equivalent', label: 'Emitir Documento Equivalente POS', description: 'Generar comprobante POS electrónico según Resolución 165/2023 con QR' },
+  { id: 'perm-dian-fev', module: 'dian', action: 'fev_invoice', slug: 'dian.fev_invoice', label: 'Emitir Factura Electrónica (FEV)', description: 'Emitir Facturas Electrónicas de Venta nominales a terceros' },
+  { id: 'perm-dian-nc', module: 'dian', action: 'credit_note', slug: 'dian.credit_note', label: 'Emitir Notas Crédito Electrónicas', description: 'Generar Notas Crédito con CUDE legal para anulación o devolución' },
+  { id: 'perm-dian-cfg', module: 'dian', action: 'config', slug: 'dian.config', label: 'Configuración Técnica DIAN', description: 'Gestionar resolución de facturación, prefijo, rangos y software PIN' },
+  { id: 'perm-dian-xml', module: 'dian', action: 'xml_download', slug: 'dian.xml_download', label: 'Descargar XML UBL 2.1 Oficial', description: 'Permite descargar archivos XML firmados digitalmente para auditoría' },
+
+  // --- 4. CLIENTES Y TERCEROS ---
+  { id: 'perm-cust-read', module: 'customers', action: 'read', slug: 'customers.read', label: 'Directorio de Clientes', description: 'Consultar listado de clientes y terceros registrados' },
+  { id: 'perm-cust-create', module: 'customers', action: 'create', slug: 'customers.create', label: 'Crear Clientes', description: 'Registrar nuevos clientes con NIT, Cédula y datos de contacto' },
+  { id: 'perm-cust-update', module: 'customers', action: 'update', slug: 'customers.update', label: 'Editar Clientes', description: 'Actualizar información fiscal, teléfono y correo electrónico' },
+  { id: 'perm-cust-delete', module: 'customers', action: 'delete', slug: 'customers.delete', label: 'Eliminar Clientes', description: 'Dar de baja registros de clientes del sistema' },
+  { id: 'perm-cust-export', module: 'customers', action: 'export', slug: 'customers.export', label: 'Exportar Clientes', description: 'Descargar listado de terceros en Excel o CSV' },
+
+  // --- 5. REPORTES, FINANZAS Y ANALÍTICA ---
+  { id: 'perm-rep-read', module: 'reports', action: 'read', slug: 'reports.read', label: 'Reportes Generales de Ventas', description: 'Permite ver volumen de ventas, número de órdenes y ticket promedio' },
+  { id: 'perm-rep-financial', module: 'reports', action: 'financial', slug: 'reports.financial', label: 'Reporte Financiero y Ganancias', description: 'Acceso a ingresos netos, costos acumulados y margen de ganancia bruta' },
+  { id: 'perm-rep-taxes', module: 'reports', action: 'taxes', slug: 'reports.taxes', label: 'Reporte Fiscal e Impuestos', description: 'Consultar discriminación de IVA 19%, 5%, Impoconsumo 8% y Exentos' },
+  { id: 'perm-rep-cashier', module: 'reports', action: 'cashier', slug: 'reports.cashier', label: 'Ventas por Cajero / Vendedor', description: 'Auditoría individual del desempeño por usuario y caja' },
+  { id: 'perm-rep-export', module: 'reports', action: 'export', slug: 'reports.export', label: 'Exportar Reportes Contables', description: 'Descargar reportes y balances en formatos compatibles con contabilidad' },
+
+  // --- 6. PERSONAL, USUARIOS Y ROLES (RBAC) ---
+  { id: 'perm-usr-manage', module: 'users', action: 'manage', slug: 'users.manage', label: 'Gestión Completa de Personal', description: 'Control maestro de personal, altas, bajas y configuración de seguridad' },
+  { id: 'perm-usr-read', module: 'users', action: 'read', slug: 'users.read', label: 'Ver Directorio de Personal', description: 'Permite consultar el listado de empleados registrados en la empresa' },
+  { id: 'perm-usr-create', module: 'users', action: 'create', slug: 'users.create', label: 'Registrar Nuevos Empleados', description: 'Crear cuentas para trabajadores con asignación obligatoria de rol' },
+  { id: 'perm-usr-update', module: 'users', action: 'update', slug: 'users.update', label: 'Editar Empleados y Roles', description: 'Modificar datos, correo y rol asignado al empleado' },
+  { id: 'perm-usr-status', module: 'users', action: 'status', slug: 'users.status', label: 'Activar / Suspender Acceso', description: 'Habilitar o inhabilitar temporalmente a empleados' },
+  { id: 'perm-usr-pwd', module: 'users', action: 'reset_password', slug: 'users.reset_password', label: 'Restablecer Contraseñas', description: 'Definir una nueva contraseña de inicio de sesión para el empleado' },
+  { id: 'perm-usr-delete', module: 'users', action: 'delete', slug: 'users.delete', label: 'Eliminar Empleados', description: 'Dar de baja permanente a cuentas de empleados' },
+  { id: 'perm-role-read', module: 'users', action: 'roles_read', slug: 'roles.read', label: 'Ver Matriz de Roles y Permisos', description: 'Consultar roles existentes y los permisos asociados a cada uno' },
+  { id: 'perm-role-create', module: 'users', action: 'roles_create', slug: 'roles.create', label: 'Crear Roles Personalizados', description: 'Definir nuevos perfiles y asignar combinaciones específicas de permisos' },
+  { id: 'perm-role-update', module: 'users', action: 'roles_update', slug: 'roles.update', label: 'Editar Matriz de Roles', description: 'Añadir o remover permisos granulares de roles existentes' },
+  { id: 'perm-role-delete', module: 'users', action: 'roles_delete', slug: 'roles.delete', label: 'Eliminar Roles', description: 'Eliminar roles personalizados que no tengan empleados asignados' },
+
+  // --- 7. MESA DE AYUDA Y SOPORTE ---
+  { id: 'perm-sup-manage', module: 'support', action: 'manage', slug: 'support.manage', label: 'Gestión Completa de Soporte', description: 'Acceso total a tickets, respuestas y resolución' },
+  { id: 'perm-sup-read', module: 'support', action: 'read', slug: 'support.read', label: 'Ver Tickets de Soporte', description: 'Consultar solicitudes de soporte técnico y estado' },
+  { id: 'perm-sup-create', module: 'support', action: 'create', slug: 'support.create', label: 'Abrir Casos de Soporte', description: 'Crear nuevos tickets de consulta o reporte de incidencias' },
+  { id: 'perm-sup-reply', module: 'support', action: 'reply', slug: 'support.reply', label: 'Responder en Tickets', description: 'Enviar mensajes y dar seguimiento a casos abiertos' },
+  { id: 'perm-sup-close', module: 'support', action: 'close', slug: 'support.close', label: 'Cerrar Casos de Soporte', description: 'Finalizar tickets una vez solucionado el requerimiento' },
+
+  // --- 8. CONFIGURACIÓN DEL NEGOCIO ---
+  { id: 'perm-cfg-manage', module: 'settings', action: 'manage', slug: 'settings.manage', label: 'Configuración Total de Empresa', description: 'Control maestro de parámetros corporativos y comerciales' },
+  { id: 'perm-cfg-read', module: 'settings', action: 'read', slug: 'settings.read', label: 'Ver Configuración', description: 'Consultar información básica y perfil comercial del negocio' },
+  { id: 'perm-cfg-branding', module: 'settings', action: 'branding', slug: 'settings.branding', label: 'Personalizar Marca y Colores', description: 'Modificar colores de interfaz, logotipo y nombre del comercio' },
+  { id: 'perm-cfg-currency', module: 'settings', action: 'currency', slug: 'settings.currency', label: 'Configurar Monedas y Cambio', description: 'Definir moneda principal, divisas aceptadas y tipos de conversión' },
+  { id: 'perm-cfg-subscription', module: 'settings', action: 'subscription', slug: 'settings.subscription', label: 'Gestionar Suscripción', description: 'Consultar vigencia de suscripción y renovar plan' },
 ];
 
 export const INITIAL_TENANTS: Tenant[] = [
@@ -48,6 +94,37 @@ export const INITIAL_TENANTS: Tenant[] = [
     secondaryColor: '#0284C7', // Sky blue
     currency: '$',
     createdAt: '2026-01-10T08:00:00Z',
+    dianConfig: {
+      enabled: true,
+      nit: '901584732',
+      dv: '3',
+      legalName: 'Panadería & Café La Espiga S.A.S.',
+      commercialName: 'La Espiga Panadería Gourmet',
+      taxRegime: '48', // Responsable de IVA
+      taxResponsibilities: ['R-99-PN'],
+      ciiu: '1081',
+      departmentCode: '11',
+      departmentName: 'Bogotá D.C.',
+      cityCode: '11001',
+      cityName: 'Bogotá D.C.',
+      address: 'Carrera 7 # 71 - 21',
+      phone: '+57 (601) 745-8899',
+      email: 'facturacion@laespiga.com.co',
+      resolution: {
+        resolutionNumber: '18764000001',
+        resolutionDate: '2026-01-15',
+        prefix: 'POS',
+        fromNumber: 1,
+        toNumber: 10000,
+        currentNumber: 101,
+        validFrom: '2026-01-15',
+        validTo: '2027-01-15',
+        technicalKey: 'fc8eac422eba16e122d5aa92739577c20ce64a06',
+        environment: '2', // Habilitación / Pruebas
+        softwareId: 'e28bbd91-768a-4933-a3b0-449a03761ec8',
+        softwarePin: '75489',
+      },
+    },
   },
   {
     id: 'tenant-102',
@@ -58,6 +135,37 @@ export const INITIAL_TENANTS: Tenant[] = [
     secondaryColor: '#06B6D4', // Cyan
     currency: '$',
     createdAt: '2026-02-15T09:30:00Z',
+    dianConfig: {
+      enabled: true,
+      nit: '900889124',
+      dv: '7',
+      legalName: 'ElectroSmart Innovación S.A.S.',
+      commercialName: 'ElectroSmart Tech Store',
+      taxRegime: '48',
+      taxResponsibilities: ['R-99-PN', 'O-13'],
+      ciiu: '4741',
+      departmentCode: '05',
+      departmentName: 'Antioquia',
+      cityCode: '05001',
+      cityName: 'Medellín',
+      address: 'Calle 10 # 43E - 12, El Poblado',
+      phone: '+57 (604) 312-5500',
+      email: 'facturas@electrosmart.io',
+      resolution: {
+        resolutionNumber: '18764000002',
+        resolutionDate: '2026-02-01',
+        prefix: 'POS',
+        fromNumber: 1,
+        toNumber: 5000,
+        currentNumber: 54,
+        validFrom: '2026-02-01',
+        validTo: '2027-02-01',
+        technicalKey: '9a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b',
+        environment: '2',
+        softwareId: 'b45cc123-8899-4321-a123-998877665544',
+        softwarePin: '12345',
+      },
+    },
   },
   {
     id: 'tenant-103',
@@ -68,6 +176,37 @@ export const INITIAL_TENANTS: Tenant[] = [
     secondaryColor: '#D97706', // Amber gold
     currency: '$',
     createdAt: '2026-03-01T12:00:00Z',
+    dianConfig: {
+      enabled: true,
+      nit: '901334552',
+      dv: '1',
+      legalName: 'Boutique Bella Moda S.A.S.',
+      commercialName: 'Bella Moda Diseños',
+      taxRegime: '48',
+      taxResponsibilities: ['R-99-PN'],
+      ciiu: '4771',
+      departmentCode: '76',
+      departmentName: 'Valle del Cauca',
+      cityCode: '76001',
+      cityName: 'Cali',
+      address: 'Avenida 6N # 24 - 05',
+      phone: '+57 (602) 660-4411',
+      email: 'contabilidad@bellamoda.co',
+      resolution: {
+        resolutionNumber: '18764000003',
+        resolutionDate: '2026-03-01',
+        prefix: 'POS',
+        fromNumber: 1,
+        toNumber: 5000,
+        currentNumber: 32,
+        validFrom: '2026-03-01',
+        validTo: '2027-03-01',
+        technicalKey: '7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d',
+        environment: '2',
+        softwareId: 'c88ee442-1234-5678-90ab-cdef12345678',
+        softwarePin: '98765',
+      },
+    },
   },
 ];
 
@@ -100,60 +239,87 @@ export const INITIAL_SUBSCRIPTIONS: TenantSubscription[] = [
 
 export const INITIAL_ROLES: Role[] = [
   // Tenant 101 roles
-  { id: 'role-admin-101', tenantId: 'tenant-101', name: 'Administrador General', description: 'Acceso total y control gerencial', isSystem: true },
-  { id: 'role-cajero-101', tenantId: 'tenant-101', name: 'Cajero POS', description: 'Acceso exclusivo al Punto de Venta y consulta básica', isSystem: false },
-  { id: 'role-inventario-101', tenantId: 'tenant-101', name: 'Encargado de Almacén', description: 'Control de inventarios y stock', isSystem: false },
+  { id: 'role-admin-101', tenantId: 'tenant-101', name: 'Administrador de Empresa', description: 'Control y administración completa de la empresa', isSystem: true },
+  { id: 'role-cajero-101', tenantId: 'tenant-101', name: 'Cajero / Punto de Venta', description: 'Acceso para cobrar, emitir tickets y consultar clientes', isSystem: false },
+  { id: 'role-inventario-101', tenantId: 'tenant-101', name: 'Supervisor de Inventario', description: 'Gestión de productos, catálogo y ajustes de existencias', isSystem: false },
 
   // Tenant 102 roles
-  { id: 'role-admin-102', tenantId: 'tenant-102', name: 'Administrador General', description: 'Acceso total y control gerencial', isSystem: true },
-  { id: 'role-cajero-102', tenantId: 'tenant-102', name: 'Cajero POS', description: 'Acceso para ventas', isSystem: false },
+  { id: 'role-admin-102', tenantId: 'tenant-102', name: 'Administrador de Empresa', description: 'Control y administración completa de la empresa', isSystem: true },
+  { id: 'role-cajero-102', tenantId: 'tenant-102', name: 'Cajero / Punto de Venta', description: 'Acceso para registrar ventas y facturación en caja', isSystem: false },
 
   // Tenant 103 roles
-  { id: 'role-admin-103', tenantId: 'tenant-103', name: 'Administrador General', description: 'Acceso total', isSystem: true },
-  { id: 'role-cajero-103', tenantId: 'tenant-103', name: 'Vendedor / Cajero', description: 'Venta al mostrador', isSystem: false },
+  { id: 'role-admin-103', tenantId: 'tenant-103', name: 'Administrador de Empresa', description: 'Control y administración completa de la empresa', isSystem: true },
+  { id: 'role-cajero-103', tenantId: 'tenant-103', name: 'Cajero / Punto de Venta', description: 'Atención al mostrador y cobros', isSystem: false },
 ];
 
 export const INITIAL_ROLE_PERMISSIONS: RolePermission[] = [
-  // Admin 101 (All permissions)
+  // Admin 101 (All tenant system permissions)
   ...SYSTEM_PERMISSIONS.map((p) => ({
     id: `rp-admin101-${p.id}`,
     roleId: 'role-admin-101',
     permissionId: p.id,
   })),
-  // Cajero 101 (Only POS sales, view products, support)
-  { id: 'rp-cajero-1', roleId: 'role-cajero-101', permissionId: 'perm-o-create' },
-  { id: 'rp-cajero-2', roleId: 'role-cajero-101', permissionId: 'perm-o-read' },
-  { id: 'rp-cajero-3', roleId: 'role-cajero-101', permissionId: 'perm-p-read' },
-  { id: 'rp-cajero-4', roleId: 'role-cajero-101', permissionId: 'perm-s-manage' },
 
-  // Almacén 101 (Products CRUD, no sales deletion, no reports)
-  { id: 'rp-inv-1', roleId: 'role-inventario-101', permissionId: 'perm-p-create' },
-  { id: 'rp-inv-2', roleId: 'role-inventario-101', permissionId: 'perm-p-read' },
-  { id: 'rp-inv-3', roleId: 'role-inventario-101', permissionId: 'perm-p-update' },
-  { id: 'rp-inv-4', roleId: 'role-inventario-101', permissionId: 'perm-p-delete' },
-  { id: 'rp-inv-5', roleId: 'role-inventario-101', permissionId: 'perm-s-manage' },
+  // Cajero 101 (POS sales, receipt, customers, basic support)
+  { id: 'rp-cajero-1', roleId: 'role-cajero-101', permissionId: 'perm-pos-view' },
+  { id: 'rp-cajero-2', roleId: 'role-cajero-101', permissionId: 'perm-pos-create' },
+  { id: 'rp-cajero-3', roleId: 'role-cajero-101', permissionId: 'perm-pos-read' },
+  { id: 'rp-cajero-4', roleId: 'role-cajero-101', permissionId: 'perm-pos-reprint' },
+  { id: 'rp-cajero-5', roleId: 'role-cajero-101', permissionId: 'perm-prod-read' },
+  { id: 'rp-cajero-6', roleId: 'role-cajero-101', permissionId: 'perm-cust-read' },
+  { id: 'rp-cajero-7', roleId: 'role-cajero-101', permissionId: 'perm-cust-create' },
+  { id: 'rp-cajero-8', roleId: 'role-cajero-101', permissionId: 'perm-sup-read' },
+  { id: 'rp-cajero-9', roleId: 'role-cajero-101', permissionId: 'perm-sup-create' },
 
-  // Admin 102 & 103
+  // Almacén / Inventario 101 (Products catalog, adjustments, categories, view sales)
+  { id: 'rp-inv-1', roleId: 'role-inventario-101', permissionId: 'perm-prod-read' },
+  { id: 'rp-inv-2', roleId: 'role-inventario-101', permissionId: 'perm-prod-create' },
+  { id: 'rp-inv-3', roleId: 'role-inventario-101', permissionId: 'perm-prod-update' },
+  { id: 'rp-inv-4', roleId: 'role-inventario-101', permissionId: 'perm-prod-delete' },
+  { id: 'rp-inv-5', roleId: 'role-inventario-101', permissionId: 'perm-prod-stock' },
+  { id: 'rp-inv-6', roleId: 'role-inventario-101', permissionId: 'perm-prod-categories' },
+  { id: 'rp-inv-7', roleId: 'role-inventario-101', permissionId: 'perm-pos-read' },
+  { id: 'rp-inv-8', roleId: 'role-inventario-101', permissionId: 'perm-sup-read' },
+  { id: 'rp-inv-9', roleId: 'role-inventario-101', permissionId: 'perm-sup-create' },
+
+  // Admin 102 & 103 (All permissions for their tenant)
   ...SYSTEM_PERMISSIONS.map((p) => ({
     id: `rp-admin102-${p.id}`,
     roleId: 'role-admin-102',
     permissionId: p.id,
   })),
-  { id: 'rp-cajero102-1', roleId: 'role-cajero-102', permissionId: 'perm-o-create' },
-  { id: 'rp-cajero102-2', roleId: 'role-cajero-102', permissionId: 'perm-o-read' },
-  { id: 'rp-cajero102-3', roleId: 'role-cajero-102', permissionId: 'perm-p-read' },
+  { id: 'rp-cajero102-1', roleId: 'role-cajero-102', permissionId: 'perm-pos-view' },
+  { id: 'rp-cajero102-2', roleId: 'role-cajero-102', permissionId: 'perm-pos-create' },
+  { id: 'rp-cajero102-3', roleId: 'role-cajero-102', permissionId: 'perm-pos-read' },
+  { id: 'rp-cajero102-4', roleId: 'role-cajero-102', permissionId: 'perm-prod-read' },
+  { id: 'rp-cajero102-5', roleId: 'role-cajero-102', permissionId: 'perm-cust-read' },
+  { id: 'rp-cajero102-6', roleId: 'role-cajero-102', permissionId: 'perm-cust-create' },
 
   ...SYSTEM_PERMISSIONS.map((p) => ({
     id: `rp-admin103-${p.id}`,
     roleId: 'role-admin-103',
     permissionId: p.id,
   })),
-  { id: 'rp-cajero103-1', roleId: 'role-cajero-103', permissionId: 'perm-o-create' },
-  { id: 'rp-cajero103-2', roleId: 'role-cajero-103', permissionId: 'perm-o-read' },
-  { id: 'rp-cajero103-3', roleId: 'role-cajero-103', permissionId: 'perm-p-read' },
+  { id: 'rp-cajero103-1', roleId: 'role-cajero-103', permissionId: 'perm-pos-view' },
+  { id: 'rp-cajero103-2', roleId: 'role-cajero-103', permissionId: 'perm-pos-create' },
+  { id: 'rp-cajero103-3', roleId: 'role-cajero-103', permissionId: 'perm-pos-read' },
+  { id: 'rp-cajero103-4', roleId: 'role-cajero-103', permissionId: 'perm-prod-read' },
+  { id: 'rp-cajero103-5', roleId: 'role-cajero-103', permissionId: 'perm-cust-read' },
+  { id: 'rp-cajero103-6', roleId: 'role-cajero-103', permissionId: 'perm-cust-create' },
 ];
 
 export const INITIAL_USERS: User[] = [
+  // Super Administrador de la Plataforma (Multi-Empresa Global - Sin empresa fija)
+  {
+    id: 'user-superadmin-platform',
+    tenantId: '',
+    roleId: 'role-superadmin',
+    name: 'Super Administrador Global',
+    email: 'admin@midigitienda.com',
+    isActive: true,
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+    createdAt: '2026-01-01T00:00:00Z',
+  },
   // Tenant 101
   {
     id: 'user-admin-101',
@@ -235,6 +401,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'Panadería',
     isActive: true,
     createdAt: '2026-01-12T10:00:00Z',
+    dianTaxType: 'IVA_0',
   },
   {
     id: 'prod-101-2',
@@ -248,6 +415,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'Bollería',
     isActive: true,
     createdAt: '2026-01-12T10:05:00Z',
+    dianTaxType: 'IVA_19',
   },
   {
     id: 'prod-101-3',
@@ -261,6 +429,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'Cafetería',
     isActive: true,
     createdAt: '2026-01-12T10:10:00Z',
+    dianTaxType: 'INC_8',
   },
   {
     id: 'prod-101-4',
@@ -274,6 +443,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'Cafetería',
     isActive: true,
     createdAt: '2026-01-12T10:15:00Z',
+    dianTaxType: 'INC_8',
   },
   {
     id: 'prod-101-5',
@@ -287,6 +457,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'Pastelería',
     isActive: true,
     createdAt: '2026-01-12T10:20:00Z',
+    dianTaxType: 'IVA_19',
   },
   {
     id: 'prod-101-6',
@@ -300,6 +471,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'Snacks & Delis',
     isActive: true,
     createdAt: '2026-01-12T10:25:00Z',
+    dianTaxType: 'INC_8',
   },
   {
     id: 'prod-101-7',
@@ -313,6 +485,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'Bebidas',
     isActive: true,
     createdAt: '2026-01-12T10:30:00Z',
+    dianTaxType: 'INC_8',
   },
 
   // Tenant 102 - Tech Store

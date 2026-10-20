@@ -1,3 +1,15 @@
+import type {
+  DianTaxpayerData,
+  DianCustomerData,
+  DianTaxBreakdown,
+  DianDocumentMeta,
+  DianTaxType,
+  DianResolution,
+  DianIdType,
+} from '@/lib/dian/types';
+
+export * from '@/lib/dian/types';
+
 export type TenantStatus = 'active' | 'suspended';
 
 export interface Tenant {
@@ -9,10 +21,52 @@ export interface Tenant {
   secondaryColor: string;
   currency: string;
   createdAt: string;
+  dianConfig?: DianTaxpayerData;
 }
 
-export type PermissionModule = 'products' | 'orders' | 'reports' | 'users' | 'support' | 'settings';
-export type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'manage';
+export type PermissionModule =
+  | 'orders'
+  | 'products'
+  | 'dian'
+  | 'customers'
+  | 'reports'
+  | 'users'
+  | 'support'
+  | 'settings';
+
+export type PermissionAction =
+  | 'create'
+  | 'read'
+  | 'update'
+  | 'delete'
+  | 'manage'
+  | 'view'
+  | 'discount'
+  | 'reprint'
+  | 'export'
+  | 'stock_adjust'
+  | 'cost_view'
+  | 'categories'
+  | 'pos_equivalent'
+  | 'fev_invoice'
+  | 'credit_note'
+  | 'config'
+  | 'xml_download'
+  | 'financial'
+  | 'taxes'
+  | 'cashier'
+  | 'status'
+  | 'reset_password'
+  | 'roles_read'
+  | 'roles_create'
+  | 'roles_update'
+  | 'roles_delete'
+  | 'reply'
+  | 'close'
+  | 'branding'
+  | 'currency'
+  | 'subscription'
+  | 'cash_control';
 
 export interface Permission {
   id: string;
@@ -61,6 +115,7 @@ export interface Product {
   category?: string;
   isActive: boolean;
   createdAt: string;
+  dianTaxType?: DianTaxType;
 }
 
 export type PaymentMethod = 'cash' | 'transfer' | 'card_machine';
@@ -76,6 +131,8 @@ export interface OrderItem {
   unitPrice: number;
   cost?: number;
   subtotal: number;
+  dianTaxType?: DianTaxType;
+  dianTaxAmount?: number;
 }
 
 export interface Order {
@@ -97,6 +154,20 @@ export interface Order {
   itemsCount: number;
   createdAt: string;
   orderItems?: OrderItem[];
+  // DIAN Software Propio fields
+  dianDocumentNumber?: string;
+  dianPrefix?: string;
+  dianConsecutive?: number;
+  dianCufe?: string;
+  dianQrString?: string;
+  dianQrDataUrl?: string;
+  dianXml?: string;
+  dianStatus?: 'VALIDATED_LOCAL' | 'TRANSMITTED_DIAN';
+  dianCustomer?: DianCustomerData;
+  dianTaxBreakdown?: DianTaxBreakdown;
+  creditNoteNumber?: string;
+  creditNoteCude?: string;
+  creditNoteXml?: string;
 }
 
 export type SubscriptionStatus = 'active' | 'expired';

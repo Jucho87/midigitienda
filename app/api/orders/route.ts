@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       // Cargar productos involucrados dentro de la transacción (aislado por tenant)
       const ids = items.map((i) => i.productId);
       const products = await tx.product.findMany({ where: { id: { in: ids }, tenantId: ctx.tenantId, isActive: true } });
-      const map = new Map(products.map((p) => [p.id, p]));
+      const map = new Map<string, any>(products.map((p: any) => [p.id, p]));
 
       let subtotal = 0;
       const lineData: any[] = [];

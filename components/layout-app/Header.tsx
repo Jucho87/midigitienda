@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Clock,
   LogOut,
+  Building2,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -25,19 +26,24 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToTab }) => {
     isSubscriptionExpired,
     renewSubscription,
     logout,
+    isPlatformAdmin,
+    activeTenantId,
+    setActiveTenant,
+    allTenants,
   } = useAuth();
 
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
-  const notifications = db.getNotifications(currentTenant.id);
+  const tenantId = currentTenant?.id || 'tenant-101';
+  const notifications = db.getNotifications(tenantId);
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const expiryDate = new Date(subscription.expiresAt);
-  const daysRemaining = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const expiryDate = subscription?.expiresAt ? new Date(subscription.expiresAt) : new Date();
+  const daysRemaining = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
   const handleMarkAllRead = () => {
-    db.markAllNotificationsAsRead(currentTenant.id);
+    db.markAllNotificationsAsRead(tenantId);
     setShowNotifDropdown(false);
   };
 
@@ -48,42 +54,64 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToTab }) => {
         <div className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg">
           <div
             className="w-8 h-8 rounded-md flex items-center justify-center text-white font-bold text-sm shadow-xs"
-            style={{ backgroundColor: currentTenant.primaryColor }}
+            style={{ backgroundColor: currentTenant?.primaryColor || '#0f172a' }}
           >
             <Store className="w-4 h-4" />
           </div>
           <div>
             <span className="font-semibold text-slate-800 text-sm max-w-[160px] md:max-w-[220px] truncate block">
-              {currentTenant.name}
+              {isPlatformAdmin && !activeTenantId ? 'Plataforma Global (Todas)' : (currentTenant?.name || 'Mi Negocio')}
             </span>
             <span className="text-[11px] text-slate-500 block leading-tight">
-              Moneda base: <span className="font-mono text-slate-600">{currentTenant.currency}</span>
+              {isPlatformAdmin && !activeTenantId ? 'Super Admin Multi-Empresa' : `Moneda: ${currentTenant?.currency || '$'}`}
             </span>
           </div>
         </div>
 
+        {/* Selector de empresa para el Super Administrador */}
+        {isPlatformAdmin && (
+          <div className="hidden lg:flex items-center space-x-2 bg-slate-100 hover:bg-slate-200/80 transition-colors border border-slate-300 px-3 py-1.5 rounded-xl text-xs">
+            <Building2 className="w-4 h-4 text-slate-600 flex-shrink-0" />
+            <span className="font-semibold text-slate-600">Empresa:</span>
+            <select
+              value={activeTenantId || ''}
+              onChange={(e) => setActiveTenant(e.target.value)}
+              className="bg-transparent font-bold text-slate-900 focus:outline-hidden cursor-pointer"
+            >
+              <option value="">🌐 Todas las empresas (Global)</option>
+              {allTenants.map((t) => (
+                <option key={t.id} value={t.id}>
+                  🏢 {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Pill de suscripción */}
-        <div className="hidden sm:flex items-center space-x-1.5">
-          {isSubscriptionExpired ? (
-            <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
-              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-              <span>Suscripción Vencida</span>
-              <button
-                onClick={() => renewSubscription(1)}
-                className="ml-1 underline text-rose-800 hover:text-rose-900 font-semibold"
-              >
-                Renovar
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <Clock className="w-3.5 h-3.5 text-emerald-600" />
-              <span>
-                {subscription.planName.split(' ')[0]} ({daysRemaining}d restantes)
-              </span>
-            </div>
-          )}
-        </div>
+        {!isPlatformAdmin && (
+          <div className="hidden sm:flex items-center space-x-1.5">
+            {isSubscriptionExpired ? (
+              <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                <span>Suscripción Vencida</span>
+                <button
+                  onClick={() => renewSubscription(1)}
+                  className="ml-1 underline text-rose-800 hover:text-rose-900 font-semibold"
+                >
+                  Renovar
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                <span>
+                  {(subscription?.planName || 'Plan').split(' ')[0]} ({daysRemaining}d restantes)
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right: Notificaciones y usuario */}

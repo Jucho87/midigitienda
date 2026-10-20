@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/services/db';
-import { Product, POSCartItem, PaymentMethod, Order } from '@/types';
+import { Product, POSCartItem, PaymentMethod, Order, DianCustomerData, DianIdType } from '@/types';
 import { ReceiptModal } from '@/components/pos/ReceiptModal';
 import {
   Search,
@@ -18,6 +18,10 @@ import {
   PackageX,
   Sparkles,
   ShoppingBag,
+  FileCheck2,
+  UserCheck,
+  Building2,
+  Mail,
 } from 'lucide-react';
 
 export const PosView: React.FC = () => {
@@ -35,6 +39,14 @@ export const PosView: React.FC = () => {
   const [cashAmountReceived, setCashAmountReceived] = useState<number>(0);
   const [paymentReference, setPaymentReference] = useState('');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // DIAN Colombian Invoicing State
+  const [dianDocType, setDianDocType] = useState<'20' | '01'>('20'); // '20' = POS Res. 165/2023, '01' = FEV
+  const [isFinalConsumer, setIsFinalConsumer] = useState<boolean>(true);
+  const [customerIdType, setCustomerIdType] = useState<DianIdType>('13'); // CC por defecto
+  const [customerIdNumber, setCustomerIdNumber] = useState<string>('');
+  const [customerName, setCustomerName] = useState<string>('');
+  const [customerEmail, setCustomerEmail] = useState<string>('');
 
   // Success receipt modal
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
@@ -152,6 +164,21 @@ export const PosView: React.FC = () => {
     try {
       setCheckoutError(null);
 
+      const dianCustomerData: DianCustomerData = isFinalConsumer
+        ? {
+            idType: '13',
+            idNumber: '222222222222',
+            name: 'Consumidor Final',
+            isFinalConsumer: true,
+          }
+        : {
+            idType: customerIdType,
+            idNumber: customerIdNumber.trim() || '222222222222',
+            name: customerName.trim() || 'Cliente Mostrador',
+            email: customerEmail.trim() || undefined,
+            isFinalConsumer: false,
+          };
+
       const order = db.createOrderTransaction({
         tenantId: currentTenant.id,
         userId: currentUser.id,
@@ -160,6 +187,8 @@ export const PosView: React.FC = () => {
         paymentMethod,
         paymentReference: paymentReference.trim() || undefined,
         amountReceived: paymentMethod === 'cash' ? cashAmountReceived : cartTotal,
+        dianDocumentType: dianDocType,
+        dianCustomer: dianCustomerData,
       });
 
       // Transaction committed successfully!
@@ -473,6 +502,133 @@ export const PosView: React.FC = () => {
                       >
                         Renovar Suscripción Ahora
                       </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* DIAN Colombian Invoicing Controls */}
+              {currentTenant.dianConfig?.enabled && (
+                <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1.5 text-xs font-bold text-blue-900">
+                      <FileCheck2 className="w-4 h-4 text-blue-700" />
+                      <span>Comprobante DIAN (Software Propio)</span>
+                    </div>
+                    <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                      Res. 165 / 2023
+                    </span>
+                  </div>
+
+                  {/* Document Type Selector */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDianDocType('20')}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center border transition-all ${
+                        dianDocType === '20'
+                          ? 'bg-blue-900 text-white border-blue-900 shadow-2xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      Doc. Equivalente POS
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDianDocType('01');
+                        setIsFinalConsumer(false); // FEV generally requires customer identification
+                      }}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center border transition-all ${
+                        dianDocType === '01'
+                          ? 'bg-blue-900 text-white border-blue-900 shadow-2xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      Factura Electrónica (FEV)
+                    </button>
+                  </div>
+
+                  {/* Customer Selector */}
+                  <div className="space-y-2 pt-1 border-t border-blue-100">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-semibold text-slate-700">Cliente Adquirente:</span>
+                      <div className="flex space-x-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsFinalConsumer(true)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            isFinalConsumer
+                              ? 'bg-blue-900 text-white'
+                              : 'bg-white text-slate-600 border border-slate-200'
+                          }`}
+                        >
+                          Consumidor Final
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsFinalConsumer(false)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            !isFinalConsumer
+                              ? 'bg-blue-900 text-white'
+                              : 'bg-white text-slate-600 border border-slate-200'
+                          }`}
+                        >
+                          Identificar Cliente
+                        </button>
+                      </div>
+                    </div>
+
+                    {!isFinalConsumer && (
+                      <div className="space-y-2 bg-white p-2.5 rounded-lg border border-blue-200 animate-in fade-in text-xs">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Tipo Doc</label>
+                            <select
+                              value={customerIdType}
+                              onChange={(e) => setCustomerIdType(e.target.value as DianIdType)}
+                              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white"
+                            >
+                              <option value="13">CC (Cédula)</option>
+                              <option value="31">NIT</option>
+                              <option value="22">CE (Extranjería)</option>
+                              <option value="41">Pasaporte</option>
+                            </select>
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-[10px] font-medium text-slate-500 block mb-0.5">No. Documento *</label>
+                            <input
+                              type="text"
+                              value={customerIdNumber}
+                              onChange={(e) => setCustomerIdNumber(e.target.value)}
+                              placeholder="Ej. 1020304050"
+                              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Razón Social / Nombre Completo *</label>
+                          <input
+                            type="text"
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                            placeholder="Nombre del comprador o empresa"
+                            className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-medium text-slate-500 block mb-0.5">Correo para Factura Electrónica (DIAN)</label>
+                          <input
+                            type="email"
+                            value={customerEmail}
+                            onChange={(e) => setCustomerEmail(e.target.value)}
+                            placeholder="cliente@ejemplo.com"
+                            className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md"
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -74,7 +74,7 @@ export async function isSubscriptionActive(tenantId: string): Promise<{ active: 
   return { active: true };
 }
 
-const dec = (v: Prisma.Decimal | number | null | undefined): number =>
+const dec = (v: any): number =>
   v == null ? 0 : typeof v === 'number' ? v : Number(v.toString());
 const iso = (d: Date | null | undefined): string => (d ? new Date(d).toISOString() : '');
 

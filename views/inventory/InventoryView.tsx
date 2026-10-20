@@ -37,7 +37,16 @@ export const InventoryView: React.FC = () => {
   const [adjustReason, setAdjustReason] = useState('Reabastecimiento');
 
   // Form State
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    barcode: string;
+    price: number;
+    cost: number;
+    stock: number;
+    minStock: number;
+    category: string;
+    dianTaxType: 'IVA_19' | 'IVA_5' | 'IVA_0' | 'INC_8';
+  }>({
     name: '',
     barcode: '',
     price: 0,
@@ -45,6 +54,7 @@ export const InventoryView: React.FC = () => {
     stock: 0,
     minStock: 5,
     category: 'General',
+    dianTaxType: 'IVA_19',
   });
 
   const loadProducts = () => {
@@ -109,6 +119,7 @@ export const InventoryView: React.FC = () => {
       stock: 10,
       minStock: 5,
       category: 'General',
+      dianTaxType: 'IVA_19',
     });
     setShowProductModal(true);
   };
@@ -124,6 +135,7 @@ export const InventoryView: React.FC = () => {
       stock: p.stock,
       minStock: p.minStock || 5,
       category: p.category || 'General',
+      dianTaxType: (p.dianTaxType as 'IVA_19' | 'IVA_5' | 'IVA_0' | 'INC_8') || 'IVA_19',
     });
     setShowProductModal(true);
   };
@@ -143,6 +155,7 @@ export const InventoryView: React.FC = () => {
           stock: Number(formData.stock),
           minStock: Number(formData.minStock),
           category: formData.category,
+          dianTaxType: formData.dianTaxType,
         });
       } else {
         db.createProduct(currentTenant.id, {
@@ -153,6 +166,7 @@ export const InventoryView: React.FC = () => {
           stock: Number(formData.stock),
           minStock: Number(formData.minStock),
           category: formData.category,
+          dianTaxType: formData.dianTaxType,
           isActive: true,
         });
       }
@@ -554,6 +568,30 @@ export const InventoryView: React.FC = () => {
                     className="w-full text-xs px-3 py-2 border border-slate-300 rounded-xl"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Tratamiento Tributario / Impuesto DIAN (Colombia)
+                </label>
+                <select
+                  value={formData.dianTaxType}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      dianTaxType: e.target.value as 'IVA_19' | 'IVA_5' | 'IVA_0' | 'INC_8',
+                    })
+                  }
+                  className="w-full text-xs px-3 py-2 border border-slate-300 rounded-xl bg-white"
+                >
+                  <option value="IVA_19">IVA General (19%) - Tarifa estándar</option>
+                  <option value="IVA_5">IVA Reducido (5%) - Alimentos básicos, insumos</option>
+                  <option value="IVA_0">Exento / Excluido (0%) - Bienes exentos de ley</option>
+                  <option value="INC_8">Impuesto Nacional al Consumo INC (8%) - Restaurantes y bares</option>
+                </select>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Se discrimina automáticamente en la Factura Electrónica y Ticket POS conforme al E.T.
+                </span>
               </div>
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-end space-x-2">
