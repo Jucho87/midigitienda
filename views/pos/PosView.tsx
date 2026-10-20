@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/services/db';
 import { Product, POSCartItem, PaymentMethod, Order, DianCustomerData, DianIdType } from '@/types';
@@ -22,6 +22,8 @@ import {
   UserCheck,
   Building2,
   Mail,
+  Check,
+  X,
 } from 'lucide-react';
 
 export const PosView: React.FC = () => {
@@ -129,17 +131,152 @@ export const PosView: React.FC = () => {
     setCart([]);
   };
 
-  // Barcode rapid scan handler (Enter key trigger)
+  // Toast feedback for barcode scanning
+  const [scanToast, setScanToast] = useState<{
+    type: 'success' | 'error';
+    title: string;
+    description: string;
+  } | null>(null);
+
+  // Auto-dismiss scan toast after 3 seconds
+  useEffect(() => {
+    if (!scanToast) return;
+    const timer = setTimeout(() => setScanToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [scanToast]);
+
+  // Acoustic feedback (Beep POS de caja registradora sintetizado con Web Audio API)
+  const playScannerBeep = useCallback((type: 'success' | 'error') => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'success') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1400, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.09);
+      } else {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, ctx.currentTime);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.22);
+      }
+    } catch {
+      // AudioContext might be blocked until user gesture, ignore silently
+    }
+  }, []);
+
+  // Process barcode scan from physical scanner gun or input
+  const processBarcodeScan = useCallback((rawCode: string) => {
+    const code = rawCode.trim();
+    if (!code) return;
+
+    const found = db.getProductByBarcode(currentTenant.id, code);
+    if (found) {
+      if (found.stock <= 0) {
+        playScannerBeep('error');
+        setScanToast({
+          type: 'error',
+          title: `Sin Existencias (${found.name})`,
+          description: `El artículo no tiene unidades disponibles en inventario.`,
+        });
+      } else {
+        addToCart(found);
+        playScannerBeep('success');
+        setScanToast({
+          type: 'success',
+          title: `Escaneo Exitoso (+1)`,
+          description: `${found.name} • ${currentTenant.currency}${found.price.toFixed(2)}`,
+        });
+      }
+    } else {
+      playScannerBeep('error');
+      setScanToast({
+        type: 'error',
+        title: `Código No Registrado: "${code}"`,
+        description: `No se encontró ningún artículo activo con este código de barras.`,
+      });
+    }
+  }, [currentTenant.id, currentTenant.currency, playScannerBeep]);
+
+  // Form submit (manual typing or scanner focused on input)
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-
-    const found = db.getProductByBarcode(currentTenant.id, searchQuery.trim());
-    if (found) {
-      addToCart(found);
-      setSearchQuery('');
-    }
+    processBarcodeScan(searchQuery.trim());
+    setSearchQuery('');
   };
+
+  // Global Hardware Barcode Scanner Listener (Emulación de Teclado HID)
+  // Las pistolas lectoras USB/Bluetooth transmiten caracteres a < 50ms de intervalo y finalizan con Enter
+  useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = Date.now();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Si el usuario está en el checkout o viendo el ticket, no interceptar
+      if (showCheckoutModal || completedOrder) return;
+
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+      const isSearchInput = activeEl === barcodeInputRef.current;
+
+      const now = Date.now();
+      const diff = now - lastKeyTime;
+      lastKeyTime = now;
+
+      if (e.key === 'Enter') {
+        // Si el foco estaba en la barra de búsqueda, el form onSubmit lo gestiona
+        if (isSearchInput) {
+          return;
+        }
+
+        // Si se capturó un código desde la pistola lectora (mínimo 2 caracteres)
+        if (buffer.trim().length >= 2) {
+          processBarcodeScan(buffer.trim());
+          buffer = '';
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        buffer = '';
+        return;
+      }
+
+      // Ignorar teclas modificadoras o especiales
+      if (e.key.length > 1) return;
+
+      // Si el usuario está escribiendo manualmente en otro input (ej. datos de cliente), ignorar
+      if (isInput && !isSearchInput) {
+        return;
+      }
+
+      // Si el tiempo entre teclas supera 90ms y no estaba en la barra de búsqueda, reiniciar buffer
+      if (diff > 90 && !isSearchInput) {
+        buffer = e.key;
+      } else {
+        buffer += e.key;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [showCheckoutModal, completedOrder, processBarcodeScan]);
+
+  // Auto-focus barcode input on load
+  useEffect(() => {
+    barcodeInputRef.current?.focus();
+  }, []);
 
   // Calculations
   const cartSubtotal = useMemo(() => {
@@ -214,6 +351,26 @@ export const PosView: React.FC = () => {
       <div className="flex-1 flex flex-col h-full overflow-hidden p-4 lg:p-5">
         {/* Top Bar: Barcode scan input & Filters */}
         <div className="bg-white p-3.5 rounded-2xl shadow-xs border border-slate-200/80 mb-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <Barcode className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Pistola Lectora: Lista</span>
+              </span>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">
+                (Apunta la pistola y dispara en cualquier momento; se agregará directo al carrito con sonido)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => barcodeInputRef.current?.focus()}
+              className="text-[11px] text-slate-500 hover:text-slate-800 font-semibold underline decoration-slate-300"
+            >
+              Enfocar lector
+            </button>
+          </div>
+
           <form onSubmit={handleBarcodeSubmit} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -222,7 +379,7 @@ export const PosView: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por nombre o escanear código de barras (Presiona Enter)..."
+                placeholder="Buscar por nombre o escanear código de barras con la pistola..."
                 className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-400 bg-slate-50/50"
               />
               <Barcode className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
@@ -817,6 +974,30 @@ export const PosView: React.FC = () => {
           tenant={currentTenant}
           onClose={() => setCompletedOrder(null)}
         />
+      )}
+
+      {/* FLOATING BARCODE SCANNER TOAST NOTIFICATION */}
+      {scanToast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-start space-x-3 p-3.5 rounded-2xl shadow-2xl border animate-in slide-in-from-bottom-5 duration-200 max-w-sm ${
+            scanToast.type === 'success'
+              ? 'bg-slate-900 border-slate-800 text-white'
+              : 'bg-rose-950 border-rose-800 text-white'
+          }`}
+        >
+          <div className={`p-2 rounded-xl flex-shrink-0 ${scanToast.type === 'success' ? 'bg-emerald-500 text-white shadow-xs' : 'bg-rose-600 text-white shadow-xs'}`}>
+            <Barcode className="w-5 h-5" />
+          </div>
+          <div className="flex-1 text-xs">
+            <div className="font-bold flex items-center justify-between text-white">
+              <span>{scanToast.title}</span>
+              <button onClick={() => setScanToast(null)} className="text-slate-400 hover:text-white p-0.5 ml-2">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">{scanToast.description}</p>
+          </div>
+        </div>
       )}
     </div>
   );

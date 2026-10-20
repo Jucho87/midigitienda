@@ -1003,7 +1003,14 @@ class DatabaseService {
   }
 
   getProductByBarcode(tenantId: string, barcode: string): Product | undefined {
-    return this.allProducts.find((p) => (p.tenantId === tenantId || tenantId === 'tenant-global') && p.isActive && p.barcode === barcode);
+    if (!barcode) return undefined;
+    const clean = barcode.trim().toLowerCase();
+    return this.allProducts.find((p) => {
+      const matchTenant = p.tenantId === tenantId || tenantId === 'tenant-global';
+      if (!matchTenant || !p.isActive) return false;
+      const b = (p.barcode || '').trim().toLowerCase();
+      return b === clean || p.id.toLowerCase() === clean;
+    });
   }
 
   createProduct(tenantId: string, data: Omit<Product, 'id' | 'tenantId' | 'createdAt'>): Product {
