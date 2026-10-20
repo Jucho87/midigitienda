@@ -1,0 +1,6 @@
+{
+  "name": "SaaS ERP/POS Multi-Tenant",
+  "description": "Software de gestión comercial por suscripción con POS rápido, inventario, permisos RBAC, branding dinámico y soporte.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
